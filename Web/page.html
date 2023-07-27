@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>心心的陪伴室</title>
+    <link rel="stylesheet" type="text/css" href="css\style.css">
+</head>
+<body>
+    <script src="js\config.js"></script>
+    <script src="js\script.js"></script>
+    <h1>欢迎来到我的陪伴室</h1>
+    <div class="chat-container" id="chatContainer">
+        <!-- Chat messages will go here -->
+    </div>
+    <div class="chat-controls">
+        <textarea class="chat-input" id="chatInput"></textarea>
+        <button id="sendButton" onmousedown="startRecording(event)" onmouseup="stopRecording(event)">按住 说话</button>
+        <button onclick="changeTopic()">换一个话题</button>
+        <button onclick="generateStory()">对话生成故事</button>
+    </div>
+
+</body>
+</html>
