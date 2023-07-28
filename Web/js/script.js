@@ -1,14 +1,10 @@
-const sendAudioData = (blob, baseUrl, endpoint, sampleRate) => {
+const sendAudioData = (blob, baseUrl, endpoint) => {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', baseUrl + endpoint, true);
 
     let formData = new FormData();
     
-    formData.append('audioData', blob, 'audio.wav');
-
-    if (sampleRate !== undefined) {
-        formData.append('sampleRate', sampleRate.toString());
-    }
+    formData.append('audioData', blob, config.fileName);
     xhr.send(formData);
     return xhr;
 }
@@ -67,53 +63,61 @@ const createPCMBlob = (pcmBuffer) => {
     return new Blob([pcmArrayBuffer], { type: 'audio/pcm' });
 }
 
-const changeTopic = (chatContainer) => {
-    chatContainer.innerHTML = '';
-    return chatContainer;
+const changeTopic = () => {
+    document.getElementById('chatContainer').innerHTML = '';
 }
-
+window.changeTopic = changeTopic;
+window.generateStory = generateStory;
 const generateStory = () => {
     // Implement your story generation logic here
 }
 
-
 document.addEventListener('DOMContentLoaded', function () {
-    var audioContext = new AudioContext();
     var recorder = null;
     var recordButton = '#sendButton';
     var stream = null;
-
     var recordingStartTime;
     var messageDiv;
+    var audioChunks = [];
 
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function (mediaStream) {
-            console.log('Microphone access granted');
-            stream = mediaStream;
-        })
-        .catch(function (error) {
-            console.log('Microphone access denied');
-        });
+    var constraints = { 
+        audio: {
+            channelCount: config.audioRecorderOptions.channelCount,
+            sampleRate: config.audioRecorderOptions.sampleRate,
+            sampleSize: config.audioRecorderOptions.sampleSize
+        }
+    };
 
-    window.startRecording = function (event) {
+    const handleDataAvailable = (e) => audioChunks.push(e.data);
+    const handleError = (error) => console.log(error, 'Microphone access denied');
+    const handleSuccess = (mediaStream) => {
+        console.log('Microphone access granted');
+        stream = mediaStream;
+        recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = handleDataAvailable;
+    }
+
+    navigator.mediaDevices.getUserMedia(constraints).then(handleSuccess).catch(handleError);
+
+    const startRecording = (event) => {
         event.preventDefault();
-        if (stream) {
+        if (recorder) {
             recordingStartTime = Date.now();  // Save the recording start time
             messageDiv = startAudioMessage();
-            recorder = new MediaRecorder(stream, config.audioRecorderOptions);
             recorder.start();
         } else {
             console.log('Error: Microphone access was not granted');
         }
     };
 
-    window.stopRecording = function (event) {
+    const stopRecording = (event) => {
         event.preventDefault();
         if (recorder) {
             recorder.stop();
-            recorder.ondataavailable = function (e) {
-                var xhr = sendAudioData(e.data, config.audioBaseUrl, 
-                    config.audioEndpoint, config.audioRecorderOptions.sampleRate);
+            recorder.onstop = e => {
+                var blob = new Blob(audioChunks);
+                var xhr = sendAudioData(blob, config.audioBaseUrl, 
+                    config.audioEndpoint, config.audioRecorderOptions.audioBitsPerSecond);
                 xhr.onload = function () {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         console.log('Audio data successfully sent to the server.');
@@ -123,16 +127,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.querySelector(recordButton).disabled = false; // Enable button when bot is finished processing
                     }
                 };
-            }
-            recorder = null;
+                audioChunks = [];
+                recorder = null;
+            };
         }
     };
 
-    window.changeTopic = function () {
-        var chatContainer = document.getElementById('chatContainer');
-        chatContainer.innerHTML = '';
-    }
 
 
-    window.generateStory = generateStory;
+    window.startRecording = startRecording;
+    window.stopRecording = stopRecording;
+
 });

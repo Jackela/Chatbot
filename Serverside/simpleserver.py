@@ -22,7 +22,7 @@ def upload():
     
     filename = secure_filename(file.filename)
     audio_format = filename.rsplit('.', 1)[1].lower() if '.' in filename else None
-    sample_rate = request.form.get('sampleRate')
+    audio_bits_per_second = request.form.get('audioBitsPerSecond')
     # Save the file
     current_directory = os.path.dirname(os.path.realpath(__file__))
     save_path = os.path.join(current_directory, filename)
@@ -33,9 +33,9 @@ def upload():
     with open(save_path, 'rb') as f:
         audio_data = f.read()
 
-    print(f"Received audio data of type: {audio_format}, sample rate: {sample_rate} and size: {len(audio_data)} bytes.")
-    text = audio_data_to_text(audio_data = audio_data, format=audio_format)
-    print(text)
+    print(f"Received audio data of type: {audio_format}, audio bits per second: {audio_bits_per_second} and size: {len(audio_data)} bytes.")
+    ##text = audio_data_to_text(audio_data = audio_data, format=audio_format)
+    ##print(text)
     return Response('OK', status=200)
 
 if __name__ == '__main__':
