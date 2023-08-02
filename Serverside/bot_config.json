@@ -1,0 +1,8 @@
+{
+    "url": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/eb-instant?access_token=",
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "text_input": "text",
+    "audio_input": "audio"
+}

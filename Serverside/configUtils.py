@@ -28,7 +28,7 @@ def retrieve_access_token(file_name: str = "access_token.json") -> str:
     return access_token
 
 
-def generate_cuid():
+def generate_cuid() -> str:
     return str(uuid.uuid4())[:60]
 
 if __name__ == "__main__":

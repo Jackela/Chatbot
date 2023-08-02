@@ -1,13 +1,16 @@
 from flask import Flask, request, Response
 from flask_cors import CORS, cross_origin
-from audiotextprocess import audio_data_to_text
+from audiotextprocess import audio_data_to_text, text_to_audio_data
 from werkzeug.utils import secure_filename
+from chatbotbaidu import handle_user_audio_input, handle_user_text_input
+from pydub import AudioSegment
+from pydub.playback import play
+import io
 import os
 
 app = Flask(__name__)
 cors = CORS(app)
 
-import os
 
 @app.route('/upload', methods=['POST'])
 @cross_origin()
@@ -19,25 +22,19 @@ def upload():
         return Response('No audio part in the request', status=400)
 
     file = request.files['audioData']
-    
-    filename = secure_filename(file.filename)
-    audio_format = filename.rsplit('.', 1)[1].lower() if '.' in filename else None
-    audio_bits_per_second = request.form.get('audioBitsPerSecond')
-    # Save the file
-    current_directory = os.path.dirname(os.path.realpath(__file__))
-    save_path = os.path.join(current_directory, filename)
-    file.save(save_path)
-    print(f"File saved at {save_path}")
+    audio_bytes = file.read()
+    response, cuid = handle_user_audio_input(audio_bytes)
+    print(response)
+    response_audio = text_to_audio_data(response, cuid)
+    play_audio(response_audio)
+    return Response('Success', status=200)
 
-    # Reopen the file and read the audio data
-    with open(save_path, 'rb') as f:
-        audio_data = f.read()
 
-    print(f"Received audio data of type: {audio_format}, audio bits per second: {audio_bits_per_second} and size: {len(audio_data)} bytes.")
-    ##text = audio_data_to_text(audio_data = audio_data, format=audio_format)
-    ##print(text)
-    return Response('OK', status=200)
-
+## for debugging
+def play_audio(audio_data: bytes):
+    with io.BytesIO(audio_data) as f:
+        audio_segment = AudioSegment.from_file(f)
+        play(audio_segment)
 if __name__ == '__main__':
     os.environ['FLASK_ENV'] = 'development'
     app.run(port=8080)

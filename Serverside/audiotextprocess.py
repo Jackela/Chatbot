@@ -1,13 +1,26 @@
 import requests
 import base64
 import json
-import config
+import configUtils
 import os
 from pydub import AudioSegment
 from io import BytesIO
+from pydub.playback import play
+import simpleaudio as sa
+import numpy as np
+
+local_dir_path = os.path.dirname(os.path.realpath(__file__))
+# Load the configuration file once when the module is imported
+audio_config_path = os.path.join(local_dir_path, 'audio_config.json')
+access_token_config_path = os.path.join(local_dir_path, 'access_token.json')
+with open(audio_config_path, "r") as f:
+    audio_config = json.load(f)
+    
+with open(access_token_config_path, "r") as f:
+    token_data = json.load(f)
+    access_token = token_data.get("access_token")
 
 def speech_recognition(audio_data: bytes, token: str, cuid: str, dev_pid: int, format: str, rate: int ) -> str:
-    
     headers = {
         'Content-Type': f'audio/{format};rate={rate}'
     }
@@ -15,17 +28,52 @@ def speech_recognition(audio_data: bytes, token: str, cuid: str, dev_pid: int, f
 
     response = requests.post(url, headers=headers, data=audio_data)
     result = response.json()
-    return result
     if result['err_no'] == 0:
-        return result["result"]
+        return result["result"][0]
     else:
         raise Exception('Error in speech recognition: {}'.format(result["err_msg"]))
 
-def audio_data_to_text(audio_data: bytes, dev_pid: int = 1537, format: str = "pcm", rate: int = 16000) -> str:
-    access_token = config.retrieve_access_token()
-    cuid = config.generate_cuid()
-    text =  speech_recognition(audio_data, access_token, cuid, dev_pid, format, rate)
-    return text
+
+def audio_data_to_text(audio_data: bytes) -> str:
+    dev_pid = audio_config['recognization_params']['dev_pid']
+    audio_format = audio_config['recognization_params']['format']
+    rate = audio_config['recognization_params']['rate']
+    cuid = configUtils.generate_cuid()
+    text =  speech_recognition(audio_data, access_token, cuid, dev_pid, audio_format, rate)
+    return text, cuid
+
+def text_synthesis(text, token, cuid):
+    # parameters
+    params = {
+        'tex': text,
+        'tok': token,
+        'cuid': cuid,
+        'ctp': audio_config['synthesis_params']['ctp'],
+        'lan': audio_config['synthesis_params']['lang'],
+        'spd': audio_config['synthesis_params']['speed'],
+        'vol': audio_config['synthesis_params']['options']['vol'],
+        'per': audio_config['synthesis_params']['options']['per'],
+        'aue': audio_config['synthesis_params']['aue']
+    }
+    
+    # send a post request
+    response = requests.post(audio_config['synthesis_params']['url'], params)
+    
+    # check if synthesis was successful
+    if response.headers['Content-Type'].startswith('audio'):
+        return response.content
+    else:
+        return None
+
+def text_to_audio_data(text: str, cuid) -> bytes:
+    token = configUtils.retrieve_access_token()
+    audio_data = text_synthesis(text, token, cuid)
+    return audio_data
+
+
+
+
+## utils
 def convert_webm_bytes_to_wav_bytes(input_bytes:bytes) -> bytes:
     byte_stream = BytesIO(input_bytes)
     audio = AudioSegment.from_file(byte_stream, format="webm")
@@ -52,13 +100,22 @@ def test_speech_recognition():
     text = audio_data_to_text(audio_data, dev_pid, format, rate)
     print(text)
 
+def test_text_synthesis(text:str):
+    # Assuming audio_bytes is the WAV data
+    audio_bytes = text_synthesis(text , configUtils.retrieve_access_token(), configUtils.generate_cuid())
+    # Load the data into a BytesIO object
+    audio = BytesIO(audio_bytes)
+
+    # Skip the 44 bytes WAV header
+    audio.seek(44)
+
+    # Read the data into a numpy array
+    data = np.frombuffer(audio.read(), dtype=np.int16)
+
+    # Play the audio
+    play_obj = sa.play_buffer(data, 1, 2, 16000)
+    play_obj.wait_done()
+
+
 if __name__ == "__main__":
-    current_directory = os.path.dirname(os.path.realpath(__file__))
-    f = open(os.path.join(current_directory,"audio.webm"), "rb")
-    audio_data = f.read()
-    new_audio_data = convert_webm_bytes_to_wav_bytes(audio_data)
-    new_f = open((os.path.join(current_directory,"audio.wav")), "wb")
-    new_f.write(new_audio_data)
-    new_f.close()
-    f.close()
-    
+    test_text_synthesis("测试")
