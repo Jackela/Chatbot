@@ -1,3 +1,11 @@
+let autoplay = true;
+
+// Toggle autoplay
+const toggleAutoplay = () => {
+    autoplay = !autoplay;
+};
+
+
 const sendAudioData = (blob, baseUrl, endpoint) => {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', baseUrl + endpoint, true);
@@ -8,25 +16,55 @@ const sendAudioData = (blob, baseUrl, endpoint) => {
     xhr.send(formData);
     return xhr;
 }
+function base64ToBlob(base64, mime) {
+    mime = mime || '';
+    var sliceSize = 1024;
+    var byteChars = window.atob(base64);
+    var byteArrays = [];
 
-const startBotMessage = (audioUrl) => {
-    var chatContainer = document.getElementById('chatContainer');
-    var messageDiv = createDiv(null, 'chat-message bot');
-    var botImage = createImage(config.botImagePath);
-    var audioDiv = createDiv(null, 'audio-message');
-    var playImg = createImage(config.playImagePath);
-    
-    // Add an event listener that plays the audio when the play image is clicked
-    playImg.addEventListener('click', function() {
-        fetchAndPlayAudio(audioUrl);
-    });
+    for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+        var slice = byteChars.slice(offset, offset + sliceSize);
 
-    appendChild(audioDiv, playImg);
-    appendChild(messageDiv, audioDiv);
-    appendChild(messageDiv, botImage);
-    appendChild(chatContainer, messageDiv);
-    return { messageDiv, audioDiv, playImg };
+        var byteNumbers = new Array(slice.length);
+        for (var i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        var byteArray = new Uint8Array(byteNumbers);
+
+        byteArrays.push(byteArray);
+    }
+
+    return new Blob(byteArrays, { type: mime });
 }
+
+function startBotMessage(message, audioSrc) {
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'chat-message bot';
+
+    const img = document.createElement('img');
+    img.src = config.botImagePath;
+    messageContainer.appendChild(img);
+
+    const textContainer = document.createElement('div');
+    textContainer.className = 'text-container';
+
+    const span = document.createElement('span');
+    span.textContent = message;
+    textContainer.appendChild(span);
+
+    messageContainer.appendChild(textContainer);
+
+    const audio = document.createElement('audio');
+    audio.src = audioSrc;
+    audio.controls = true;
+
+    messageContainer.appendChild(audio);
+
+    return messageContainer;
+}
+
+
 
 
 const sendPCMData = (blob, baseUrl, endpoint) => {
@@ -151,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('recorder is not defined');
         }
     }
-    
+
 
 
 
@@ -161,25 +199,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function uploadAudio() {
         if (recorder) {
-            recorder.upload("http://localhost:8080/upload", function (state, e) {
-                switch (state) {
-                    case 'uploading':
-                        //var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
-                        break;
-                    case 'ok':
-                        break;
-                    case 'error':
-                        alert("上传失败");
-                        break;
-                    case 'cancel':
-                        alert("上传被取消");
-                        break;
-                }
-            });
+            const formData = new FormData();
+            formData.append("audioData", recorder.getBlob());
+
+            fetch(config.baseUrl + config.uploadEndpoint, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Upload successful. Response:", data);
+                    // Convert base64 audio data to a blob
+                    var audioBlob = base64ToBlob(data.audio, 'audio/wav');
+                    var message = data.text;
+                    // Create a URL for the audio blob
+                    var audioUrl = URL.createObjectURL(audioBlob);
+                    // Create a new bot message with the AI response text and audio
+                    var messageContainer = startBotMessage(message, audioUrl);
+
+                    let chatContainer = document.getElementById("chatContainer");
+                    chatContainer.appendChild(messageContainer);
+
+                })
+                .catch(error => console.error(error));
         } else {
             console.error('recorder object is not defined');
         }
     }
+
     recordButton.addEventListener('mousedown', function () {
         // start recording
         var { messageDiv, audioDiv, loadingImg } = startAudioMessage();
@@ -197,18 +244,44 @@ document.addEventListener('DOMContentLoaded', function () {
         if (duration !== undefined) {
             // create a duration span
             var durationSpan = createSpan(duration + ' seconds');
-    
+
             // replace loading image with duration span
             var audioDiv = this.audioDiv;
             var loadingImg = this.loadingImg;
-    
+
             // Timeout is used to delay the execution to allow time for other processes to finish.
             // It's not the best solution, but it might be necessary in some cases.
-            setTimeout(function(){
+            setTimeout(function () {
                 audioDiv.replaceChild(durationSpan, loadingImg);
             }, 100);
         }
         uploadAudio();
     });
-    
+    var storyButton = document.getElementById('story')
+    storyButton.addEventListener('click', function () {
+        // Clear the chat
+        changeTopic()
+        // Make a POST request to the '/story' route
+        fetch(config.baseUrl + config.storyEndpoint, {
+            method: 'POST',
+            }
+        )
+            .then(response => response.json())
+            .then(data => {
+                console.log("Upload successful. Response:", data);
+                // Convert base64 audio data to a blob
+                var audioBlob = base64ToBlob(data.audio, 'audio/wav');
+                var message = data.text;
+                // Create a URL for the audio blob
+                var audioUrl = URL.createObjectURL(audioBlob);
+                // Create a new bot message with the AI response text and audio
+                var messageContainer = startBotMessage(message, audioUrl);
+
+                let chatContainer = document.getElementById("chatContainer");
+                chatContainer.appendChild(messageContainer);
+
+            })
+            .catch(error => console.error(error));
+    });
+
 });

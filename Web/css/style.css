@@ -54,3 +54,30 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.chat-message.bot {
+    background-color: #f0f0f0;
+    color: #000000;
+    margin-left: auto;
+}
+
+.chat-message.bot img {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    position: absolute;
+    left: -50px;
+}
+
+.chat-message.bot .message-content {
+    display: flex;
+    align-items: center;
+}
+
+.chat-message.bot .message-content span {
+    margin-right: 10px;
+}
+
+.chat-message.bot audio {
+    width: 100%;
+}

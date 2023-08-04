@@ -15,7 +15,6 @@ with open(bot_config_path, 'r') as f:
 
 
 def single_response(content: str, messages: list = [], access_token = retrieve_access_token()):
-
     url = bot_config["url"] + access_token
     messages.append({"role":"user", "content":content})
     payload = json.dumps({
@@ -39,7 +38,7 @@ def handle_user_audio_input(audio: bytes):
     # audio to text conversion would go here
     text, cuid = audio_data_to_text(audio)
     response = single_response(text)
-    return response, cuid
+    return text, response, cuid
 
 def handle_user_input(input_data: Union[str, bytes], input_type: str):
 
@@ -52,8 +51,30 @@ def handle_user_input(input_data: Union[str, bytes], input_type: str):
     else:
         raise ValueError("Invalid input type. Expected 'text' or 'audio'.")
 
+
+def tell_a_story(messages: list, access_token = retrieve_access_token()):
+    payload = json.dumps({
+        "messages": [
+            {
+                "role": "user",
+                "content": "根据下面用户与AI的对话写一个故事：".join(messages)
+            }
+        ]
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    url = bot_config["url"] + access_token
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    parsed_response = response.json()
+    # get the value of the "result" field
+    result = parsed_response["result"]
+    
+    return result
+
+
 if __name__ == '__main__':
-    while (True):
-        content = input(">>> ")
-        result = single_response(content, access_token=retrieve_access_token())
-        print(result)
+    messages = r"{'role':'user', 'content':'我饿了'}), {'role':'assistant', 'content':'吃了'}"
+    story = tell_a_story(messages)
+    print(story)

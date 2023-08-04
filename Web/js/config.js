@@ -5,8 +5,9 @@ var config = {
     loadingImagePath: 'path-to-loading-image',
     botImagePath: 'path-to-bot-image',
     playImagePAth: 'path-to-play-image',
-    audioEndpoint: '/upload',
-    audioBaseUrl: 'http://localhost:8080',
+    uploadEndpoint: '/upload',
+    baseUrl: 'http://localhost:8080',
+    storyEndpoint: '/story',
     audioRecorderOptions : {
         mimeType: "audio/webm;codecs=opus",
         audioBitsPerSecond: sampleRate
