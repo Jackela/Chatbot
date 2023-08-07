@@ -53,11 +53,12 @@ def handle_user_input(input_data: Union[str, bytes], input_type: str):
 
 
 def tell_a_story(messages: list, access_token = retrieve_access_token()):
+    joinedMessages = ''.join([str(message) for message in messages])
     payload = json.dumps({
         "messages": [
             {
                 "role": "user",
-                "content": "根据下面用户与AI的对话写一个故事：".join(messages)
+                "content": "根据下面用户与AI的对话写一个故事：" + joinedMessages
             }
         ]
     })
