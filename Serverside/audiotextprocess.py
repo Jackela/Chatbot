@@ -34,13 +34,12 @@ def speech_recognition(audio_data: bytes, token: str, cuid: str, dev_pid: int, f
         raise Exception('Error in speech recognition: {}'.format(result["err_msg"]))
 
 
-def audio_data_to_text(audio_data: bytes) -> str:
+def audio_data_to_text(audio_data: bytes, cuid: str) -> str:
     dev_pid = audio_config['recognization_params']['dev_pid']
     audio_format = audio_config['recognization_params']['format']
     rate = audio_config['recognization_params']['rate']
-    cuid = configUtils.generate_cuid()
     text =  speech_recognition(audio_data, access_token, cuid, dev_pid, audio_format, rate)
-    return text, cuid
+    return text
 
 def text_synthesis(text, token, cuid):
     # parameters

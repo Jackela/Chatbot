@@ -1,5 +1,9 @@
+window.onload = function () {
+    switchInput('text');
+}
 let autoplay = true;
 
+const cuid = "ciy7xg9p600003sxo5b70c99d";// for testing, in real conditon it will be fetched from database
 // Toggle autoplay
 const toggleAutoplay = () => {
     autoplay = !autoplay;
@@ -37,7 +41,6 @@ function base64ToBlob(base64, mime) {
 
     return new Blob(byteArrays, { type: mime });
 }
-
 function startBotMessage(message, audioSrc) {
     const messageContainer = document.createElement('div');
     messageContainer.className = 'chat-message bot';
@@ -46,6 +49,43 @@ function startBotMessage(message, audioSrc) {
     img.src = config.botImagePath;
     messageContainer.appendChild(img);
 
+    const bubbleContainer = document.createElement('div');
+    bubbleContainer.className = 'bubble-container';
+
+    const textContainer = document.createElement('div');
+    textContainer.className = 'text-container';
+
+    const span = document.createElement('span');
+    span.textContent = message;
+
+    const audio = document.createElement('audio');
+    audio.src = audioSrc;
+    audio.controls = true;
+
+    // Check if the checkbox is checked
+    const autoplayCheckbox = document.getElementById('autoplayCheckbox');
+    if (autoplayCheckbox.checked) {
+        audio.autoplay = true;
+    }
+
+    bubbleContainer.appendChild(audio);
+    textContainer.appendChild(bubbleContainer);
+    textContainer.appendChild(span);
+    messageContainer.appendChild(textContainer);
+    return messageContainer;
+}
+
+function startUserMessage(message) {
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'chat-message user';
+
+    const img = document.createElement('img');
+    img.src = config.userImagePath;
+    messageContainer.appendChild(img);
+
+    const bubbleContainer = document.createElement('div');
+    bubbleContainer.className = 'bubble-container';
+
     const textContainer = document.createElement('div');
     textContainer.className = 'text-container';
 
@@ -53,18 +93,27 @@ function startBotMessage(message, audioSrc) {
     span.textContent = message;
     textContainer.appendChild(span);
 
-    messageContainer.appendChild(textContainer);
-
-    const audio = document.createElement('audio');
-    audio.src = audioSrc;
-    audio.controls = true;
-
-    messageContainer.appendChild(audio);
+    bubbleContainer.appendChild(textContainer);
+    messageContainer.appendChild(bubbleContainer);
 
     return messageContainer;
 }
 
 
+
+function switchInput(inputType) {
+    if (inputType === 'text') {
+        document.getElementById('chat-input').style.display = '';
+        document.getElementById('switchToText').style.display = 'none';
+        document.getElementById('switchToVoice').style.display = '';
+        document.getElementById('record').style.display = 'none';
+    } else if (inputType === 'voice') {
+        document.getElementById('chat-input').style.display = 'none';
+        document.getElementById('switchToText').style.display = '';
+        document.getElementById('switchToVoice').style.display = 'none';
+        document.getElementById('record').style.display = '';
+    }
+}
 
 
 const sendPCMData = (blob, baseUrl, endpoint) => {
@@ -103,38 +152,22 @@ const startAudioMessage = () => {
     var chatContainer = document.getElementById('chatContainer');
     var messageDiv = createDiv(null, 'chat-message user');
     var userImage = createImage(config.userImagePath);
+    var bubbleContainer = createDiv(null, 'bubble-container'); // Create a bubble container
     var audioDiv = createDiv(null, 'audio-message');
     var loadingImg = createImage(config.loadingImagePath);
     appendChild(audioDiv, loadingImg);
-    appendChild(messageDiv, audioDiv);
+    appendChild(bubbleContainer, audioDiv); // Append the audioDiv to the bubble container
+    appendChild(messageDiv, bubbleContainer); // Append the bubble container to the messageDiv
     appendChild(messageDiv, userImage);
     appendChild(chatContainer, messageDiv);
     return { messageDiv, audioDiv, loadingImg };
 }
 
+
 const finishAudioMessage = (messageDiv, audioLength) => {
     var audioDiv = messageDiv.querySelector('.audio-message');
     audioDiv.innerText = 'Audio Message (' + audioLength + '")';
     return audioDiv;
-}
-
-const fetchArrayBuffer = (audioUrl) =>
-    fetch(audioUrl)
-        .then(response => response.arrayBuffer())
-        .catch(error => console.log(error));
-
-
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const decodeAudioData = (arrayBuffer) =>
-    audioContext.decodeAudioData(arrayBuffer, audioBuffer => audioBuffer.getChannelData(0));
-
-const convertWebMToPCM = (audioUrl, callback) =>
-    fetchArrayBuffer(audioUrl).then(decodeAudioData).then(callback);
-
-const createPCMBlob = (pcmBuffer) => {
-    var pcmData = new Float32Array(pcmBuffer);
-    var pcmArrayBuffer = pcmData.buffer;
-    return new Blob([pcmArrayBuffer], { type: 'audio/wav' });
 }
 
 
@@ -191,18 +224,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-
-
-    function playRecording() {
-        recorder.play(audio);
-    }
-
     function uploadAudio() {
         if (recorder) {
             const formData = new FormData();
             formData.append("audioData", recorder.getBlob());
-
-            fetch(config.baseUrl + config.uploadEndpoint, {
+            formData.append("cuid", cuid)
+            fetch(config.baseUrl + config.uploadAudioEndpoint, {
                 method: 'POST',
                 body: formData
             })
@@ -235,20 +262,21 @@ document.addEventListener('DOMContentLoaded', function () {
         recordButton.loadingImg = loadingImg;
         startRecording();  // this function comes from your recording logic
     });
-
+    document.getElementById('textForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+    });
     recordButton.addEventListener('mouseup', function () {
         // stop recording and get the duration
         var duration = stopRecording();
         console.log("duration: " + duration)
         // Only proceed to replace the loading image if a duration was returned
         if (duration !== undefined) {
+            console.log("结束录音")
             // create a duration span
             var durationSpan = createSpan(duration + ' seconds');
-
             // replace loading image with duration span
             var audioDiv = this.audioDiv;
             var loadingImg = this.loadingImg;
-
             // Timeout is used to delay the execution to allow time for other processes to finish.
             // It's not the best solution, but it might be necessary in some cases.
             setTimeout(function () {
@@ -261,10 +289,16 @@ document.addEventListener('DOMContentLoaded', function () {
     storyButton.addEventListener('click', function () {
         // Clear the chat
         changeTopic()
+        console.log("开始生成故事")
+        console.log(cuid)
         // Make a POST request to the '/story' route
         fetch(config.baseUrl + config.storyEndpoint, {
             method: 'POST',
-            }
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ cuid: cuid })
+        }
         )
             .then(response => response.json())
             .then(data => {
@@ -283,5 +317,52 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => console.error(error));
     });
+    function submitForm() {
+        console.log("submitted")
+        var text = document.getElementById('chat-input').value;  // This gets the text from the textarea
+        document.getElementById('chat-input').value = '';  // This clears the textarea
+        var messageContainer = startUserMessage(text);
+
+        let chatContainer = document.getElementById("chatContainer");
+        chatContainer.appendChild(messageContainer);
+        fetch(config.baseUrl + config.uploadTextEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: text,
+                cuid: cuid
+            })  // This sends the text as a JSON object
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Upload successful. Response:", data);
+                // Convert base64 audio data to a blob
+                var audioBlob = base64ToBlob(data.audio, 'audio/wav');
+                var message = data.text;
+                // Create a URL for the audio blob
+                var audioUrl = URL.createObjectURL(audioBlob);
+                // Create a new bot message with the AI response text and audio
+                var messageContainer = startBotMessage(message, audioUrl);
+
+                let chatContainer = document.getElementById("chatContainer");
+                chatContainer.appendChild(messageContainer);
+
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+
+    document.getElementById('chat-input').addEventListener('keydown', function (event) {
+        if (event.key == 'Enter') {
+            event.preventDefault(); // Prevents the default action
+            console.log("Enter")
+            submitForm(); // Call the form submission function
+        }
+    });
+
 
 });

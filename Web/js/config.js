@@ -1,11 +1,12 @@
 let sampleRate = 16000;
 let sampleBits = 16;
 var config = {
-    userImagePath: 'path-to-user-image',
-    loadingImagePath: 'path-to-loading-image',
-    botImagePath: 'path-to-bot-image',
-    playImagePAth: 'path-to-play-image',
-    uploadEndpoint: '/upload',
+    userImagePath: './assets/user.png',
+    loadingImagePath: './assets/loading.gif',
+    botImagePath: './assets/bot.png',
+    playImagePAth: './assets/play.png',
+    uploadAudioEndpoint: '/uploadAudio',
+    uploadTextEndpoint:'/uploadText',
     baseUrl: 'http://localhost:8080',
     storyEndpoint: '/story',
     audioRecorderOptions : {

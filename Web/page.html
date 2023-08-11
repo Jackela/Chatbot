@@ -1,24 +1,51 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>心心的陪伴室</title>
     <link rel="stylesheet" type="text/css" href="css\style.css">
 </head>
+
 <body>
-    <script  src="js\config.js"></script>
+    <script src="js\config.js"></script>
     <script type="text/javascript" src="js\Recorder.js"></script>
     <script src="js\script.js"></script>
-    <h1>欢迎来到我的陪伴室</h1>
-    <div class="chat-container" id="chatContainer">
-        <!-- Chat messages will go here -->
+    <div class="top-bar">
+        <div>欢迎来到我的陪伴室</div>
+        <label>
+            <input type="checkbox" id="autoplayCheckbox" checked>
+            自动播放语音
+        </label>
     </div>
-    <div class="chat-controls">
-        <textarea class="chat-input" id="chatInput"></textarea>
-        <button id="record">Hold to Record</button>
-        <button onclick="changeTopic()">换一个话题</button>
-        <button id="story">对话生成故事</button>
-        <button onclick="toggleAutoplay()">Toggle Autoplay</button>
+    <div class="chat-box">
+        <div class="chat-container" id="chatContainer">
+            <!-- Chat messages will go here -->
+        </div>
+        <div class="chat-functions">
+            <button id="story">对话生成故事</button>
+            <button onclick="changeTopic()">换一个话题</button>
+            <button id="leave">离开对话</button>
+        </div>
+    </div>
+
+    <div class="input-bar">
+        <button id="switchToText" onclick="switchInput('text')" style="display: none;  background-size: cover;">
+            <img src="./assets/keyboard.png">
+        </button>
+        <button id="switchToVoice" style="background-size: cover;" onclick="switchInput('voice')">
+            <img src="./assets/microphone.png">
+        </button>
+        <form id="textForm" >
+            <textarea id="chat-input" class="message-bar"></textarea>
+            <button id="record" class="message-bar">按住 说话</button>
+        </form>
+        <button id="emoji">
+            <img src="./assets/emoji.png">
+        </button>
+        <button id="more">
+            <img src="./assets/more.png" </button>
     </div>
 
 </body>
+
 </html>

@@ -473,4 +473,4 @@ def func2():
     print("func2")
 
 if __name__ == "__main__":
-    print(response_to_user("test", 0.8))
+    pass

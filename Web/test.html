@@ -1,0 +1,63 @@
+<html>
+
+<head>
+    <title>心心的陪伴室</title>
+    <link rel="stylesheet" type="text/css" href="css\style.css">
+</head>
+
+<body>
+    <div class="top-bar">
+        <div>欢迎来到我的陪伴室</div>
+        <label>
+            <input type="checkbox" id="autoplayCheckbox" checked="">
+            自动播放语音
+        </label>
+    </div>
+    <div class="chat-box">
+        <div class="chat-container" id="chatContainer">
+            <!-- Chat messages will go here -->
+            <div class="chat-message user"><img src="./assets/user.png">
+                <div class="bubble-container">
+                    <div class="text-container"><span>123213</span></div>
+                </div>
+            </div>
+            <div class="chat-message bot"><img src="./assets/bot.png">
+                <div class="text-container">
+                    <div class="bubble-container"><audio src="blob:null/51a293de-4957-47be-9dc5-8ef2ff6a1001"
+                            controls="" autoplay=""></audio></div>
+                    <span>“123213”这个数字组合并没有什么特定的含义或者特殊的象征意义。它只是一串随机的数字组合。如果您有其他问题或者需要其他帮助，请随时告诉我。</span>
+                </div>
+            </div>
+        </div>
+        <div class="chat-functions">
+            <button onclick="changeTopic()">换一个话题</button>
+            <button id="story">对话生成故事</button>
+            <button id="leave">离开对话</button>
+        </div>
+    </div>
+
+    <div class="input-bar">
+        <button id="switchToText" onclick="switchInput('text')" style="display: none;  background-size: cover;">
+            <img src="./assets/keyboard.png">
+        </button>
+        <button id="switchToVoice" style="background-size: cover;" onclick="switchInput('voice')">
+            <img src="./assets/microphone.png">
+        </button>
+
+        <form id="textForm">
+            <textarea id="chat-input"></textarea>
+        </form>
+        <button id="record" style="display: none;">Hold to Record</button>
+        <button id="emoji">
+            <img src="./assets/emoji.png">
+        </button>
+        <button id="more">
+            <img src="./assets/more.png" <="" button="">
+        </button>
+    </div>
+
+
+
+</body>
+
+</html>

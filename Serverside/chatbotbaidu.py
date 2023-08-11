@@ -20,25 +20,27 @@ def single_response(content: str, messages: list = [], access_token = retrieve_a
     payload = json.dumps({
         "messages": messages
     })
+    print(messages)
     headers = bot_config["headers"]
-    
     response = requests.request("POST", url, headers=headers, data=payload)
     parsed_response = response.json()
     # get the value of the "result" field
+
     result = parsed_response["result"]
 
     messages.append({"role":"assistant", "content":result})
     return result
 ## TO BE IMPLEMENTED
-def handle_user_text_input(text: str):
-    # Process text input here
-    pass
-
-def handle_user_audio_input(audio: bytes):
-    # audio to text conversion would go here
-    text, cuid = audio_data_to_text(audio)
+def handle_user_text_input(text: str, cuid: str):
     response = single_response(text)
-    return text, response, cuid
+    return response
+
+
+def handle_user_audio_input(audio: bytes, cuid: str):
+    # audio to text conversion would go here
+    text = audio_data_to_text(audio, cuid)
+    response = single_response(text)
+    return text, response
 
 def handle_user_input(input_data: Union[str, bytes], input_type: str):
 
