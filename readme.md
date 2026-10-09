@@ -1,3 +1,7 @@
+> 历史项目：百度文字与语音聊天演示，外部接口和依赖尚未按当前环境重新验证。
+>
+> Historical demo of Baidu text and voice chat; external APIs and dependencies have not been revalidated in the current environment.
+
 # Chatbot 参考文档
 
 # 前端
